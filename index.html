@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>One Time Pad</title>
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+        <!-- jQuery -->
+        <script type='text/javascript' src="http://code.jquery.com/jquery-2.2.4.min.js"   integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="   crossorigin="anonymous"></script>
+
+        <!-- Bootstrap JavaScript -->
+        <script type='text/javscript' src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <script>
+            /* Simple Pseudorandom Number Generator with Caller
+             * incremented seed. In this implementation, we use
+             * the user provided seed and increment by 1 for each
+             * letter in the English alphabet.
+             */
+            function random(seed) {
+                var x = Math.sin(seed) * 10000;
+                return x - Math.floor(x);
+            }
+
+            var letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
+   
+            var seed = 1;
+
+            // Create Event Bindings
+            $(document).ready(function($) {
+                // Generate a seed from a secret
+                $("#secret").keyup(function() {
+                    var secret = $("#secret")[0].value;
+                    // Generate new seed from secret
+                    for (var i = 0; i < secret.length; i++) {
+                        seed += secret[i].charCodeAt();
+                    };
+                });
+
+                // Encrypt a message with the pad
+                $("#message").keyup(function() {
+                    var message = $("#message")[0].value;
+                    var encrypted_message = "";
+                    var local_seed = seed;
+
+                    // Encrypt each letter of the message using the seed and increment
+                    for (var i = 0; i < message.length; i++) {
+                        if (letters.indexOf(message[i]) < 0) {
+                          encrypted_message += message[i];
+                          continue;
+                        }
+                        var encrypted_char = letters[Math.floor((letters.indexOf(message[i]) + (random(local_seed) * 52)) % 52)];
+                        encrypted_message += encrypted_char;
+                        local_seed++;
+                    };
+                    // Replace the textarea with the encrypted message
+                    $("#encrypted-message")[0].value = encrypted_message;
+                });
+
+                // Decrypt a ciphertext with the pad
+                $("#ciphertext").keyup(function() {
+                    var ciphertext = $("#ciphertext")[0].value;
+                    var decrypted_message = "";
+                    var local_seed = seed;
+
+                    // Decrypt each letter of the ciphertext using the seed and increment
+                    for (var i = 0; i < ciphertext.length; i++) {
+                        if (letters.indexOf(ciphertext[i]) < 0) {
+                          decrypted_message += ciphertext[i];
+                          continue;
+                        }
+                        // Subtract the seed, get the ceiling, and add 52 if it is a negative number
+                        if (Math.ceil((letters.indexOf(ciphertext[i]) - (random(local_seed) * 52))) < -0.0001) {
+                          var encrypted_char = letters[Math.ceil((letters.indexOf(ciphertext[i]) - (random(local_seed) * 52) + 52) % 52)];
+                        }
+                        else {
+                          var encrypted_char = letters[Math.ceil((letters.indexOf(ciphertext[i]) - (random(local_seed) * 52)) % 52)];
+                        }
+                        decrypted_message += encrypted_char;
+                        local_seed++;
+                    };
+                    // Replace the textarea with the decrypted message
+                    $("#decrypted-message")[0].value = decrypted_message;
+                });
+
+            });
+        </script>
+        <div class="container">
+            <h1 class="text-center">One Time Pad</h1>
+            <p><b>From Wikipedia:</b> In cryptography, the one-time pad (OTP) is
+              an encryption technique that cannot be cracked if used correctly.
+              In this technique, a plaintext is paired with a random secret key
+              (also referred to as a one-time pad). Then, each bit or character
+              of the plaintext is encrypted by combining it with the corresponding
+              bit or character from the pad using modular addition. If the key
+              is truly random, is at least as long as the plaintext, is never
+              reused in whole or in part, and is kept completely secret, then
+              the resulting ciphertext will be impossible to decrypt or break.</p>
+
+            <hr>
+            <!-- Step 1: Create a "pad" -->
+            <h2>Step 1: Create a "pad"</h2>
+            <p>We need to generate a "pad" or key for encrypting and decrypting
+              a message. The part that makes this unbreakable is that it is
+              completely random (vs the +13 paradigm of the simple Caeser cipher) and
+              it isn't unique (the letter a could map to more than a single number!).
+              We could make a manual letter-number mapping for our key using a message-
+              length secret, but we'll generate a simple one using a secret plaintext 
+              seed for a pseudorandom number generator.</p>
+
+            <div class="input-group">
+              <span class="input-group-addon">Seed</span>
+              <input type="text" class="form-control" id="secret">
+            </div>
+
+            <div id="pad"></div>
+
+            <!-- Step 2: Encrypt a message -->
+            <h2>Step 2: Encrypt a message</h2>
+            <p>From here we can finally encrypt a plaintext message into ciphertext
+            using the key we generated. The function is simple: <code>message + key mod 52</code></p>
+            <textarea placeholder="Message" class="form-control" rows="3" id="message"></textarea>
+            <br>
+            <textarea placeholder="Ciphertext" class="form-control" rows="3" id="encrypted-message"></textarea>
+
+            <!-- Step 3: Decrypt a message -->
+            <h2>Step 3: Decrypt a message</h2>
+            <p>We can also decrpyt a message using the same modulo operation, but
+            this time we subtract the key value and add 52 if the number is negative. <code>ciphertext - key mod 52</code></p>
+            <textarea placeholder="Ciphertext" class="form-control" rows="3" id="ciphertext"></textarea>
+            <br>
+            <textarea placeholder="Message" class="form-control" rows="3" id="decrypted-message"></textarea>
+            <hr>
+            <p class="text-center">Made by Charles Lai</p>
+        </div>
+    </body>
+</html>
