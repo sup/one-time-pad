@@ -37,6 +37,7 @@
                 $("#secret").keyup(function() {
                     var secret = $("#secret")[0].value;
                     // Generate new seed from secret
+                    seed = 1;
                     for (var i = 0; i < secret.length; i++) {
                         seed += secret[i].charCodeAt();
                     };
